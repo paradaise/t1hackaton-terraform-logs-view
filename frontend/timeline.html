@@ -1,0 +1,30 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/echarts@5/dist/echarts.min.js"></script>
+  <title>Timeline</title>
+  <style>#chart{height:70vh}</style>
+</head>
+<body class="bg-slate-50 p-6">
+  <a href="index.html" class="underline text-sky-700">Назад</a>
+  <h2 class="text-2xl mt-2 mb-4">Хронология запросов</h2>
+  <div id="chart" class="bg-white rounded shadow"></div>
+  <script>
+    const el=document.getElementById('chart'); const chart=echarts.init(el);
+    async function load(){
+      const items=[{id:'req-1',tf_req_id:'abc',label:'GET /instances',start:+new Date('2025-01-01T10:00:00Z'),end:+new Date('2025-01-01T10:00:30Z')},
+                   {id:'req-2',tf_req_id:'def',label:'POST /instances',start:+new Date('2025-01-01T10:01:00Z'),end:+new Date('2025-01-01T10:01:50Z')}];
+      const names=items.map(i=>i.label);
+      chart.setOption({
+        tooltip:{formatter:p=>p.name+'<br/>'+new Date(p.value[1]).toLocaleTimeString()+' - '+new Date(p.value[2]).toLocaleTimeString()+'<br/>tf_req_id: '+p.value[3]},
+        xAxis:{type:'time'}, yAxis:{type:'category', data:names},
+        series:[{type:'custom', renderItem:(p,api)=>{const y=api.value(0); const s=api.coord([api.value(1),y]); const e=api.coord([api.value(2),y]); const h=20; return {type:'rect', shape:{x:s[0], y:s[1]-h/2, width:e[0]-s[0], height:h}, style:{fill:'#34d399'}};}, encode:{x:[1,2], y:0, tooltip:[1,2,3]}, data:items.map((it,i)=>({name:it.label,value:[i,it.start,it.end,it.tf_req_id]}))}]
+      });
+    }
+    load();
+  </script>
+</body>
+</html>
+

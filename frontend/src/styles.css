@@ -1,0 +1,11 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* small helpers */
+.badge { @apply px-2 py-0.5 rounded text-xs; }
+.badge-info { @apply bg-emerald-100 text-emerald-700; }
+.badge-warn { @apply bg-amber-100 text-amber-800; }
+.badge-error { @apply bg-rose-100 text-rose-700; }
+
+
