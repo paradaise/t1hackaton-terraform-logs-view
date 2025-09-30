@@ -1,7 +1,4 @@
-Как использовать
-
 ```bash
-go run . ../Terraform\ Logs\ Example/*.json
+# File upload example using httpie
+http -f POST localhost:8080/upload file@Terraform\ Logs\ Example/1._plan_test-k801vip_tflog.json
 ```
-
-пока что он парсит логи в структуру go и выводит на экран
