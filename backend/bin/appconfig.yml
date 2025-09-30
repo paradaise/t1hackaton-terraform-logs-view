@@ -1,3 +1,0 @@
-postgres:
-  password: postgres
-  addr: logs_postgres:5432
