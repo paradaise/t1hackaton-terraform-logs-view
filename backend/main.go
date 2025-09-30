@@ -107,5 +107,5 @@ func main() {
 		}
 		logs = append(logs, log)
 	}
-	fmt.Printf("%+v", logs[0])
+	fmt.Printf("%+v", logs)
 }
