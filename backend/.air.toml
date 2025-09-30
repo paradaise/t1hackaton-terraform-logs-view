@@ -1,0 +1,22 @@
+root = "."
+testdata_dir = "testdata"
+tmp_dir = "bin"
+
+[build]
+  args_bin = []
+  bin = "./bin/server"
+  cmd = "make"
+  exclude_dir = ["assets", "bin", "vendor", "testdata"]
+  exclude_file = []
+  exclude_regex = ["_test.go"]
+  full_bin = ""
+  include_dir = []
+  include_ext = ["go", "tpl", "tmpl", "html"]
+  include_file = ["appconfig.yml"]
+  log = "build-errors.log"
+
+[misc]
+  clean_on_exit = true 
+
+[screen]
+  clear_on_rebuild = true 
