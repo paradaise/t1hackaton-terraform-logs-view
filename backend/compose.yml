@@ -5,6 +5,6 @@ services:
       dockerfile: air.Dockerfile
     container_name: logs_app
     ports:
-      - 8080:80
+      - 8080:8080
     volumes:
       - .:/app
