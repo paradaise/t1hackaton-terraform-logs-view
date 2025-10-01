@@ -182,5 +182,9 @@ func NewRouter(repo log.Repo) http.Handler {
 		w.WriteHeader(http.StatusNoContent)
 	})
 
+	r.Get("/corrupted-logs", func(w http.ResponseWriter, r *http.Request) {
+		logs, _ := repo.GetCorruptedLogs(r.Context())
+		WriteJson(w, logs)
+	})
 	return r
 }

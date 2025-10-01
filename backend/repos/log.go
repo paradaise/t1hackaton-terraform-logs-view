@@ -18,15 +18,17 @@ import (
 const timeFormat = "2006-01-02T15:04:05.000000-07:00"
 
 type LogRepo struct {
-	mu    sync.RWMutex
-	store map[string]*log.Log  // id -> Log
-	files map[string][]log.Log // ID файла -> логи
+	mu            sync.RWMutex
+	store         map[string]*log.Log  // id -> Log
+	files         map[string][]log.Log // ID файла -> логи
+	corruptedLogs []string
 }
 
 func NewLogRepo() log.Repo {
 	return &LogRepo{
-		store: make(map[string]*log.Log),
-		files: make(map[string][]log.Log),
+		store:         make(map[string]*log.Log),
+		files:         make(map[string][]log.Log),
+		corruptedLogs: []string{},
 	}
 }
 
@@ -35,7 +37,7 @@ func (r *LogRepo) UploadFile(
 	fileData []byte,
 	fileName string,
 ) (log.FileUploadResult, error) {
-	logs, err := log.LoadLogs(bytes.NewReader(fileData))
+	logs, corruptedLogs, err := log.LoadLogs(bytes.NewReader(fileData))
 	if err != nil {
 		return log.FileUploadResult{}, err
 	}
@@ -51,7 +53,7 @@ func (r *LogRepo) UploadFile(
 		r.store[logs[i].Id] = &logs[i]
 	}
 	r.files[fileID] = logs
-
+	r.corruptedLogs = append(r.corruptedLogs, corruptedLogs...)
 	return log.FileUploadResult{
 		ID:     fileID,
 		Status: "parsed",
@@ -259,4 +261,8 @@ func (r *LogRepo) SendExportToTelegram(
 	filters log.ExportFilters,
 ) error {
 	return errors.New("unimplemented")
+}
+
+func (r *LogRepo) GetCorruptedLogs(ctx context.Context) ([]string, error) {
+	return r.corruptedLogs, nil
 }

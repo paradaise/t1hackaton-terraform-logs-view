@@ -4,6 +4,8 @@ import (
 	"bufio"
 	"encoding/json"
 	"io"
+
+	"github.com/kaptinlin/jsonrepair"
 )
 
 type Log struct {
@@ -86,17 +88,26 @@ type Log struct {
 	X_Request_Id                                       string   `json:"X-Request-Id,omitempty"`
 	X_Runtime                                          string   `json:"X-Runtime,omitempty"`
 	Read                                               bool     `json:"read"`
+	Repaired                                           bool     `json:"repaired"`
 }
 
-func LoadLogs(r io.Reader) ([]Log, error) {
+func LoadLogs(r io.Reader) ([]Log, []string, error) {
+	var corruptedLogs []string
 	var logs []Log
 	scan := bufio.NewScanner(r)
 	for scan.Scan() {
 		var log Log
-		if err := json.Unmarshal(scan.Bytes(), &log); err != nil {
-			return nil, err
+		raw := scan.Bytes()
+		if err := json.Unmarshal(raw, &log); err != nil {
+			corruptedLogs = append(corruptedLogs, string(raw))
+			fixed, err := jsonrepair.JSONRepair(string(raw))
+			if err != nil {
+				continue
+			}
+			json.Unmarshal([]byte(fixed), &log)
+			log.Repaired = true
 		}
 		logs = append(logs, log)
 	}
-	return logs, nil
+	return logs, corruptedLogs, nil
 }
