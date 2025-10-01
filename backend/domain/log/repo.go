@@ -40,4 +40,5 @@ type Repo interface {
 	GetMetrics(ctx context.Context) (Metrics, error)
 	ExportLogs(ctx context.Context, filters ExportFilters) ([]byte, error)
 	SendExportToTelegram(ctx context.Context, chatID string, filters ExportFilters) error
+	GetCorruptedLogs(ctx context.Context) ([]string, error)
 }
