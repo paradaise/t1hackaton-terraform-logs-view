@@ -1,6 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react'
 import { useParams } from 'react-router-dom'
-import JSONFormatter from 'json-formatter-js'
 import { api, LogItem } from '../api/client'
 
 export function DetailPage(): JSX.Element {
@@ -14,19 +13,29 @@ export function DetailPage(): JSX.Element {
       // const it = await api.getLog(id)
       const it: LogItem = { id, timestamp:'2025-01-01T10:00:00Z', level:'info', section:'apply', tf_req_id:'abc', tf_resource_type:'t1_compute_instance', message:'created', tf_http_req_body:'{"name":"vm"}', tf_http_res_body:'{"id":"123","status":"ok"}' }
       setItem(it)
-      if (it.tf_http_req_body && reqRef.current) {
-        const jf = new JSONFormatter(JSON.parse(it.tf_http_req_body), 1)
-        reqRef.current.innerHTML = ''
-        reqRef.current.appendChild(jf.render())
-      }
-      if (it.tf_http_res_body && resRef.current) {
-        const jf2 = new JSONFormatter(JSON.parse(it.tf_http_res_body), 1)
-        resRef.current.innerHTML = ''
-        resRef.current.appendChild(jf2.render())
-      }
+      
+// В DetailPage.tsx временно замените проблемные строки:
+if (it.tf_http_req_body && reqRef.current) {
+  try {
+    const parsed = JSON.parse(it.tf_http_req_body)
+    reqRef.current.innerHTML = `<pre class="text-sm bg-slate-50 p-3 rounded overflow-auto">${JSON.stringify(parsed, null, 2)}</pre>`
+  } catch (e) {
+    reqRef.current.innerHTML = `<div class="text-red-500 p-3">Invalid JSON: ${it.tf_http_req_body}</div>`
+  }
+}
+if (it.tf_http_res_body && resRef.current) {
+  try {
+    const parsed = JSON.parse(it.tf_http_res_body)
+    resRef.current.innerHTML = `<pre class="text-sm bg-slate-50 p-3 rounded overflow-auto">${JSON.stringify(parsed, null, 2)}</pre>`
+  } catch (e) {
+    resRef.current.innerHTML = `<div class="text-red-500 p-3">Invalid JSON: ${it.tf_http_res_body}</div>`
+  }
+}
     }
     load()
   }, [id])
+
+  // ... остальной код без изменений
 
   if (!item) return <div>Загрузка…</div>
 
@@ -61,5 +70,4 @@ function Meta({ label, value }: { label: string; value: string }): JSX.Element {
     </div>
   )
 }
-
 

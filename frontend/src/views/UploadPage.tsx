@@ -6,6 +6,7 @@ export function UploadPage(): JSX.Element {
   const inputRef = useRef<HTMLInputElement>(null)
   const [error, setError] = useState<string>('')
   const [busy, setBusy] = useState(false)
+  const [lastFile, setLastFile] = useState<string>('')
   const navigate = useNavigate()
 
   function validate(file: File | null): file is File {
@@ -14,17 +15,24 @@ export function UploadPage(): JSX.Element {
     setError(''); return true
   }
 
-  async function handleFiles(file: File | null) {
-    if (!validate(file)) return
-    setBusy(true)
-    try {
-      const res = await api.importLogs(file)
-      console.log('importId', res.importId)
+async function handleFiles(file: File | null) {
+  if (!validate(file)) return
+  setBusy(true)
+  try {
+    const res = await api.importLogs(file)
+    console.log('import result:', res)
+
+    setLastFile(file.name)
+    setTimeout(() => {
       navigate('/logs')
-    } finally {
-      setBusy(false)
-    }
+    }, 1000)
+  } catch (error) {
+    console.error('Upload error:', error)
+    setError('Ошибка загрузки файла')
+  } finally {
+    setBusy(false)
   }
+}
 
   return (
     <div className="rounded-2xl p-10" style={{ background: 'linear-gradient(135deg, #e6f4f1, #f1f5f9)' }}>
@@ -48,6 +56,11 @@ export function UploadPage(): JSX.Element {
         <Metric title="Ошибок" value="-" className="text-rose-600"/>
         <Metric title="Средняя длит., мс" value="-"/>
       </div>
+      {lastFile && (
+        <div className="mt-6 text-slate-700">
+          <i className="fa-regular fa-circle-check text-emerald-600 mr-2"/> Файл успешно загружен, сейчас обрабатывается: <span className="font-semibold">{lastFile}</span>
+        </div>
+      )}
     </div>
   )
 }
@@ -60,5 +73,3 @@ function Metric({ title, value, className }: { title: string; value: string; cla
     </div>
   )
 }
-
-

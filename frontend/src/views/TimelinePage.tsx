@@ -1,35 +1,57 @@
-import React, { useEffect, useRef } from 'react'
+// TimelinePage.tsx
+import React, { useEffect, useRef, useState } from 'react'
 import * as echarts from 'echarts'
 import { api } from '../api/client'
 
 export function TimelinePage(): JSX.Element {
   const ref = useRef<HTMLDivElement>(null)
+  const [hasData, setHasData] = useState(false)
+  const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    if (!ref.current) return
-    const chart = echarts.init(ref.current)
-    async function load(){
-      // const items = await api.statsTimeline()
-      const items = [
-        { id:'req-1', tf_req_id:'abc', label:'GET /instances', start:'2025-01-01T10:00:00Z', end:'2025-01-01T10:00:30Z' },
-        { id:'req-2', tf_req_id:'def', label:'POST /instances', start:'2025-01-01T10:01:00Z', end:'2025-01-01T10:01:50Z' },
-      ]
-      const data = items.map((it,i)=>({ name: it.label, value: [ i, +new Date(it.start), +new Date(it.end), it.tf_req_id ] }))
-      chart.setOption({
-        tooltip:{formatter:(p:any)=>`${p.name}<br/>${new Date(p.value[1]).toLocaleTimeString()} - ${new Date(p.value[2]).toLocaleTimeString()}<br/>tf_req_id: ${p.value[3]}`},
-        xAxis:{type:'time'}, yAxis:{type:'category', data: items.map(i=>i.label)},
-        series:[{ type:'custom',
-          renderItem: (_:any, api:any) => { const catIdx=api.value(0); const start=api.coord([api.value(1),catIdx]); const end=api.coord([api.value(2),catIdx]); const h=20; return { type:'rect', shape:{ x:start[0], y:start[1]-h/2, width:end[0]-start[0], height:h }, style:{ fill:'#34d399' } } },
-          encode:{ x:[1,2], y:0, tooltip:[1,2,3] }, data }]
-      })
+    const loadData = async () => {
+      try {
+        const items = await api.statsTimeline()
+        setHasData(items.length > 0)
+        
+        if (items.length > 0 && ref.current) {
+          const chart = echarts.init(ref.current)
+          
+        }
+      } catch (error) {
+        console.error('Error loading timeline data:', error)
+        setHasData(false)
+      } finally {
+        setLoading(false)
+      }
     }
-    load()
-    const onResize = () => chart.resize()
-    window.addEventListener('resize', onResize)
-    return () => { window.removeEventListener('resize', onResize); chart.dispose() }
+
+    loadData()
   }, [])
 
-  return <div ref={ref} style={{ height: '70vh' }} className="bg-white rounded shadow" />
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-96 bg-white rounded-xl border border-slate-200">
+        <i className="fa-solid fa-spinner fa-spin text-2xl text-blue-500 mr-3"></i>
+        <span className="text-slate-600">Загрузка хронологии...</span>
+      </div>
+    )
+  }
+
+  if (!hasData) {
+    return (
+      <div className="flex flex-col items-center justify-center h-96 bg-white rounded-xl border border-slate-200 p-8">
+        <i className="fa-regular fa-clock text-5xl text-slate-300 mb-4"></i>
+        <h3 className="text-lg font-semibold text-slate-600 mb-2">Нет данных для хронологии</h3>
+        <p className="text-slate-500 text-center">
+          JSON файл пока не загружен, данных нет
+        </p>
+        <p className="text-sm text-slate-400 mt-2 text-center">
+          Загрузите файл логов на странице "Загрузка" для построения временной шкалы
+        </p>
+      </div>
+    )
+  }
+
+  return <div ref={ref} style={{ height: '400px' }} className="bg-white rounded-xl" />
 }
-
-

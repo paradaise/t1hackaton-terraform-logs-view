@@ -8,8 +8,8 @@ export function GroupPage(): JSX.Element {
 
   useEffect(() => {
     async function load(){
-      // const data = await api.getGroup(tf_req_id)
-      const data = { tf_req_id, items: [ { id:'1', timestamp:'2025-01-01T10:00:00Z', message:'HTTP request' }, { id:'2', timestamp:'2025-01-01T10:00:01Z', message:'HTTP response 200' } ] }
+      const data = await api.getGroup(tf_req_id)
+      // const data = { tf_req_id, items: [ { id:'1', timestamp:'2025-01-01T10:00:00Z', message:'HTTP request' }, { id:'2', timestamp:'2025-01-01T10:00:01Z', message:'HTTP response 200' } ] }
       setItems(data.items)
     }
     load()
@@ -30,5 +30,3 @@ export function GroupPage(): JSX.Element {
     </div>
   )
 }
-
-
