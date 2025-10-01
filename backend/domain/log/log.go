@@ -85,6 +85,7 @@ type Log struct {
 	X_Kong_Upstream_Latency                            string   `json:"X-Kong-Upstream-Latency,omitempty"`
 	X_Request_Id                                       string   `json:"X-Request-Id,omitempty"`
 	X_Runtime                                          string   `json:"X-Runtime,omitempty"`
+	Read                                               bool     `json:"read"`
 }
 
 func LoadLogs(r io.Reader) ([]Log, error) {

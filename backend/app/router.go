@@ -10,27 +10,33 @@ import (
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
-	"gitlab.com/paradaise1/t1-hackaton-terraform/domain/log"
 	"github.com/go-chi/cors"
+	"github.com/google/uuid"
+	"gitlab.com/paradaise1/t1-hackaton-terraform/domain/log"
 )
 
+func WriteJson(w http.ResponseWriter, data any) error {
+	w.Header().Set("Content-Type", "application/json")
+	return json.NewEncoder(w).Encode(data)
+}
+
 func NewRouter(repo log.Repo) http.Handler {
-    r := chi.NewRouter()
+	r := chi.NewRouter()
 
-    // CORS middleware
-    r.Use(cors.Handler(cors.Options{
-        AllowedOrigins:   []string{"http://localhost:5173", "http://127.0.0.1:5173"},
-        AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
-        AllowedHeaders:   []string{"Accept", "Authorization", "Content-Type", "X-CSRF-Token"},
-        ExposedHeaders:   []string{"Link"},
-        AllowCredentials: true,
-        MaxAge:           300,
-    }))
+	// CORS middleware
+	r.Use(cors.Handler(cors.Options{
+		AllowedOrigins:   []string{"http://localhost:5173", "http://127.0.0.1:5173"},
+		AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
+		AllowedHeaders:   []string{"Accept", "Authorization", "Content-Type", "X-CSRF-Token"},
+		ExposedHeaders:   []string{"Link"},
+		AllowCredentials: true,
+		MaxAge:           300,
+	}))
 
-    r.Use(middleware.RequestID)
-    r.Use(middleware.RealIP)
-    r.Use(middleware.Logger)
-    r.Use(middleware.Recoverer)
+	r.Use(middleware.RequestID)
+	r.Use(middleware.RealIP)
+	r.Use(middleware.Logger)
+	r.Use(middleware.Recoverer)
 
 	r.Post("/upload", func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
@@ -50,12 +56,12 @@ func NewRouter(repo log.Repo) http.Handler {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
-		res, err := repo.UploadFile(ctx, data, "")
+		res, err := repo.UploadFile(ctx, data, uuid.NewString())
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
-		json.NewEncoder(w).Encode(res)
+		WriteJson(w, res)
 	})
 
 	r.Get("/logs", func(w http.ResponseWriter, r *http.Request) {
@@ -80,7 +86,7 @@ func NewRouter(repo log.Repo) http.Handler {
 		if logs == nil {
 			logs = []log.Log{}
 		}
-		json.NewEncoder(w).Encode(logs)
+		WriteJson(w, logs)
 	})
 
 	r.Get("/logs/{id}", func(w http.ResponseWriter, r *http.Request) {
@@ -91,7 +97,7 @@ func NewRouter(repo log.Repo) http.Handler {
 			http.Error(w, "log not found", http.StatusNotFound)
 			return
 		}
-		json.NewEncoder(w).Encode(logEntry)
+		WriteJson(w, logEntry)
 	})
 
 	r.Post("/logs/mark-read", func(w http.ResponseWriter, r *http.Request) {
@@ -118,7 +124,7 @@ func NewRouter(repo log.Repo) http.Handler {
 			http.Error(w, "not found", http.StatusNotFound)
 			return
 		}
-		json.NewEncoder(w).Encode(group)
+		WriteJson(w, group)
 	})
 
 	r.Get("/timeline", func(w http.ResponseWriter, r *http.Request) {
@@ -127,7 +133,7 @@ func NewRouter(repo log.Repo) http.Handler {
 			http.Error(w, "failed to get timeline", http.StatusInternalServerError)
 			return
 		}
-		json.NewEncoder(w).Encode(timeline)
+		WriteJson(w, timeline)
 	})
 
 	r.Get("/metrics", func(w http.ResponseWriter, r *http.Request) {
@@ -136,7 +142,7 @@ func NewRouter(repo log.Repo) http.Handler {
 			http.Error(w, "failed to get metrics", http.StatusInternalServerError)
 			return
 		}
-		json.NewEncoder(w).Encode(metrics)
+		WriteJson(w, metrics)
 	})
 
 	r.Post("/export/download", func(w http.ResponseWriter, r *http.Request) {
