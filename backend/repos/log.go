@@ -1,4 +1,3 @@
-// file: repos/log.go
 package repos
 
 import (
@@ -6,31 +5,31 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"sort"
 	"strings"
 	"sync"
+	"time"
 
 	"github.com/google/uuid"
 	"gitlab.com/paradaise1/t1-hackaton-terraform/domain/log"
 )
 
+const timeFormat = "2006-01-02T15:04:05.000000-07:00"
+
 type LogRepo struct {
 	mu    sync.RWMutex
-	store map[string]log.Log   // id -> Log
-	read  map[string]bool      // пометка прочитанности
+	store map[string]*log.Log  // id -> Log
 	files map[string][]log.Log // ID файла -> логи
 }
 
-// Конструктор
 func NewLogRepo() log.Repo {
 	return &LogRepo{
-		store: make(map[string]log.Log),
-		read:  make(map[string]bool),
+		store: make(map[string]*log.Log),
 		files: make(map[string][]log.Log),
 	}
 }
 
-// UploadFile парсит JSON строчки из файла, сохраняет логи с уникальными ID и сохраняет связь с файлом
 func (r *LogRepo) UploadFile(
 	ctx context.Context,
 	fileData []byte,
@@ -46,12 +45,10 @@ func (r *LogRepo) UploadFile(
 
 	fileID := uuid.NewString()
 	for i := range logs {
-		// Генерируем ID, если нет
 		if logs[i].Id == "" {
 			logs[i].Id = uuid.NewString()
 		}
-		r.store[logs[i].Id] = logs[i]
-		r.read[logs[i].Id] = false
+		r.store[logs[i].Id] = &logs[i]
 	}
 	r.files[fileID] = logs
 
@@ -74,8 +71,6 @@ func (r *LogRepo) GetLogs(ctx context.Context, filters log.ExportFilters) ([]log
 		if filters.Level != "" {
 			levelStr := strings.ToLower(l.At_level)
 			if levelStr == "" {
-				// конвертирую уровень int в string "error"/"warn"/"info"
-				// в логах может быть другая маркировка, пример ниже:
 				levelStr = levelToStr(l.Level)
 			}
 			if strings.ToLower(filters.Level) != levelStr {
@@ -89,14 +84,25 @@ func (r *LogRepo) GetLogs(ctx context.Context, filters log.ExportFilters) ([]log
 			continue
 		}
 		if filters.Search != "" {
-			// простейший поиск по JSON строке для примера
 			b, _ := json.Marshal(l)
 			if !bytes.Contains(bytes.ToLower(b), []byte(strings.ToLower(filters.Search))) {
 				continue
 			}
 		}
-		filtered = append(filtered, l)
+		filtered = append(filtered, *l)
 	}
+	// Сортировка по @timestamp
+	sort.Slice(filtered, func(i, j int) bool {
+		iDate, err := time.Parse(timeFormat, filtered[i].At_timestamp)
+		if err != nil {
+			fmt.Println(err.Error())
+		}
+		jDate, err := time.Parse(timeFormat, filtered[j].At_timestamp)
+		if err != nil {
+			fmt.Println(err.Error())
+		}
+		return iDate.After(jDate)
+	})
 	// Пагинация
 	page := 1
 	limit := 50
@@ -110,13 +116,7 @@ func (r *LogRepo) GetLogs(ctx context.Context, filters log.ExportFilters) ([]log
 	if start > len(filtered) {
 		return []log.Log{}, nil
 	}
-	end := start + limit
-	if end > len(filtered) {
-		end = len(filtered)
-	}
-	sort.Slice(filtered, func(i, j int) bool {
-		return filtered[i].Timestamp < filtered[j].Timestamp
-	})
+	end := min(start+limit, len(filtered))
 	return filtered[start:end], nil
 }
 
@@ -141,7 +141,7 @@ func (r *LogRepo) GetLogByID(ctx context.Context, id string) (log.Log, error) {
 	if !ok {
 		return log.Log{}, errors.New("log not found")
 	}
-	return l, nil
+	return *l, nil
 }
 
 func (r *LogRepo) MarkLogsRead(ctx context.Context, ids []string) error {
@@ -149,7 +149,7 @@ func (r *LogRepo) MarkLogsRead(ctx context.Context, ids []string) error {
 	defer r.mu.Unlock()
 	for _, id := range ids {
 		if _, ok := r.store[id]; ok {
-			r.read[id] = true
+			r.store[id].Read = !r.store[id].Read
 		}
 	}
 	return nil
@@ -162,7 +162,7 @@ func (r *LogRepo) GetGroupByReqID(ctx context.Context, tfReqID string) ([]log.Lo
 	var group []log.Log
 	for _, l := range r.store {
 		if l.Tf_req_id == tfReqID {
-			group = append(group, l)
+			group = append(group, *l)
 		}
 	}
 	return group, nil
@@ -258,7 +258,5 @@ func (r *LogRepo) SendExportToTelegram(
 	chatID string,
 	filters log.ExportFilters,
 ) error {
-	// Здесь простая заглушка - нужно использовать telegram-bot-api/go для отправки.
-	// Для примера опустим детальную реализацию.
-	return nil
+	return errors.New("unimplemented")
 }
