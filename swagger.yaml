@@ -314,4 +314,45 @@ components:
             type: integer
       required: [errors, warnings, levels]
 
+    Log:
+      type: object
+      description: Terraform provider log record. Fields are optional and may vary by provider.
+      properties:
+        id:
+          type: string
+        read:
+          type: boolean
+        repaired:
+          type: boolean
+        tf_req_id:
+          type: string
+        tf_resource_type:
+          type: string
+        "@timestamp":
+          type: string
+        timestamp:
+          type: string
+        diagnostic_severity:
+          type: string
+        "@level":
+          type: string
+        level:
+          type: integer
+        "@message":
+          type: string
+        tf_http_res_status_code:
+          type: integer
+        tf_http_req_method:
+          type: string
+        tf_http_req_uri:
+          type: string
+        tf_rpc:
+          type: string
+        tf_provider_addr:
+          type: string
+        tf_data_source_type:
+          type: string
+        tf_proto_version:
+          type: string
+      additionalProperties: true
 

@@ -8,7 +8,7 @@ RUN make
 FROM alpine:3.22
 
 WORKDIR /app
-COPY --from=builder /app/bin/* .
+COPY --from=builder /app/bin/ /app/
 RUN apk add --no-cache curl
-EXPOSE 80
+EXPOSE 8080
 ENTRYPOINT [ "/app/server" ]
